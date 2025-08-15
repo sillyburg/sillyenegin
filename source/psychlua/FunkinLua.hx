@@ -967,7 +967,7 @@ class FunkinLua {
 				MusicBeatState.getVariables().set(tag, leCamera);
 			}
 		});
-		Lua_helper.add_callback(lua, "addCamera", function(tag:String, defaultTargets:Bool) {
+		Lua_helper.add_callback(lua, "addCamera", function(tag:String, ?defaultTargets:Bool = true) {
 			tag = tag.replace('.', '');
 			
 			var target:FlxCamera;
@@ -983,7 +983,7 @@ class FunkinLua {
 
 			FlxG.cameras.add(target, defaultTargets);
 		});
-		Lua_helper.add_callback(lua, "removeCamera", function(tag:String, defaultTargets:Bool) {
+		Lua_helper.add_callback(lua, "removeCamera", function(tag:String, ?idk:Bool = true) {
 			tag = tag.replace('.', '');
 
 			var target:FlxCamera;
@@ -997,7 +997,7 @@ class FunkinLua {
 					if (target == null) target = PlayState.instance.camGame;
 			}
 			
-			FlxG.cameras.remove(target, defaultTargets);
+			FlxG.cameras.remove(target, idk);
 		});
 		Lua_helper.add_callback(lua, "makeLuaSprite", function(tag:String, ?image:String = null, ?x:Float = 0, ?y:Float = 0) {
 			tag = tag.replace('.', '');
