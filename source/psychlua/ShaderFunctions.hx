@@ -2,6 +2,8 @@ package psychlua;
 
 #if (!flash && sys)
 import flixel.addons.display.FlxRuntimeShader;
+import openfl.filters.ShaderFilter;
+import openfl.filters.BitmapFilter;
 #end
 
 class ShaderFunctions
@@ -10,8 +12,8 @@ class ShaderFunctions
 	{
 		var lua = funk.lua;
 		// shader shit
-		funk.addLocalCallback("initLuaShader", function(name:String) {
-			if(!ClientPrefs.data.shaders) return false;
+		funk.addLocalCallback("initLuaShader", function(name:String, ?force:Bool = false) {
+			if(!ClientPrefs.data.shaders && !force) return false;
 
 			#if (!flash && MODS_ALLOWED && sys)
 			return funk.initLuaShader(name);
@@ -21,8 +23,8 @@ class ShaderFunctions
 			return false;
 		});
 		
-		funk.addLocalCallback("setSpriteShader", function(obj:String, shader:String) {
-			if(!ClientPrefs.data.shaders) return false;
+		funk.addLocalCallback("setSpriteShader", function(obj:String, shader:String, ?force:Bool = false) {
+			if(!ClientPrefs.data.shaders && !force) return false;
 
 			#if (!flash && sys)
 			if(!funk.runtimeShaders.exists(shader) && !funk.initLuaShader(shader))
@@ -47,6 +49,41 @@ class ShaderFunctions
 			#end
 			return false;
 		});
+
+		funk.addLocalCallback("createShaderTag", function(tag:String, shader:String, ?force:Bool = false) {
+			if(!ClientPrefs.data.shaders && !force) return false;
+
+			#if (!flash && sys)
+			if(!funk.runtimeShaders.exists(shader) && !funk.initLuaShader(shader))
+			{
+				FunkinLua.luaTrace('createShaderTag: Shader $shader is missing!', false, false, FlxColor.RED);
+				return false;
+			}
+
+			if (MusicBeatState.getVariables().get(tag) != null)
+			{
+				for (i in FlxG.cameras.list)
+				{
+					var filters:Array<BitmapFilter> = i.filters;
+					
+					filters = filters.filter(function(f) {
+						return f != MusicBeatState.getVariables().get(tag);
+					});
+
+					i.setFilters(filters);
+				}
+
+				MusicBeatState.getVariables().remove(tag);
+			}
+
+			var arr:Array<String> = funk.runtimeShaders.get(shader);
+			MusicBeatState.getVariables().set(tag, new shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, arr[0], arr[1]));
+			return true;
+			#else
+			FunkinLua.luaTrace("createShaderTag: Platform unsupported for Runtime Shaders!", false, false, FlxColor.RED);
+			#end
+			return false;
+		});
 		Lua_helper.add_callback(lua, "removeSpriteShader", function(obj:String) {
 			var split:Array<String> = obj.split('.');
 			var leObj:FlxSprite = LuaUtils.getObjectDirectly(split[0]);
@@ -59,6 +96,25 @@ class ShaderFunctions
 				return true;
 			}
 			return false;
+		});
+
+		Lua_helper.add_callback(lua, "addCamShader", function(tag:String, cam:String) {
+			var camera:FlxCamera = LuaUtils.getCamera(cam);
+
+			camera.visible = false;
+			trace(camera);
+
+			if (MusicBeatState.getVariables().get(tag) == null || !Std.isOfType(MusicBeatState.getVariables().get(tag), shaders.ErrorHandledShader.ErrorHandledRuntimeShader)) return;
+
+			camera._filters.push(MusicBeatState.getVariables().get(tag));
+		});
+
+		Lua_helper.add_callback(lua, "removeCamShader", function(tag:String, cam:String) {
+			var camera:FlxCamera = LuaUtils.getCamera(cam);
+
+			if (MusicBeatState.getVariables().get(tag) == null || !Std.isOfType(MusicBeatState.getVariables().get(tag), shaders.ErrorHandledShader.ErrorHandledRuntimeShader)) return;
+
+			camera._filters.remove(MusicBeatState.getVariables().get(tag));
 		});
 
 
@@ -268,6 +324,8 @@ class ShaderFunctions
 	#if (!flash && MODS_ALLOWED && sys)
 	public static function getShader(obj:String):FlxRuntimeShader
 	{
+		if (MusicBeatState.getVariables().get(obj) != null) return MusicBeatState.getVariables().get(obj);
+
 		var split:Array<String> = obj.split('.');
 		var target:FlxSprite = null;
 		if(split.length > 1) target = LuaUtils.getVarInArray(LuaUtils.getPropertyLoop(split), split[split.length-1]);

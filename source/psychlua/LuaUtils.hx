@@ -40,6 +40,22 @@ class LuaUtils
 		} : null;
 	}
 
+	public static function getCamera(cam):FlxCamera
+	{
+		var target:FlxCamera;
+
+		switch(cam.toLowerCase()) {
+			case 'camgame' | 'game': target = PlayState.instance.camGame;
+			case 'camhud' | 'hud': target = PlayState.instance.camHUD;
+			case 'camother' | 'other': target = PlayState.instance.camOther;
+			default:
+				target = MusicBeatState.getVariables().get(cam);
+				if (target == null) target = PlayState.instance.camGame;
+		}
+
+		return target;
+	}
+
 	public static function setVarInArray(instance:Dynamic, variable:String, value:Dynamic, allowMaps:Bool = false):Any
 	{
 		var splitProps:Array<String> = variable.split('[');
