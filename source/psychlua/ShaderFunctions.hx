@@ -6,6 +6,8 @@ import openfl.filters.ShaderFilter;
 import openfl.filters.BitmapFilter;
 #end
 
+import states.PlayState;
+
 class ShaderFunctions
 {
 	public static function implement(funk:FunkinLua)
@@ -77,7 +79,8 @@ class ShaderFunctions
 			}
 
 			var arr:Array<String> = funk.runtimeShaders.get(shader);
-			MusicBeatState.getVariables().set(tag, new shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, arr[0], arr[1]));
+			MusicBeatState.getVariables().set('shaderItself_${tag}', new shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, arr[0], arr[1]));
+			MusicBeatState.getVariables().set(tag, new ShaderFilter(MusicBeatState.getVariables().get('shaderItself_${tag}')));
 			return true;
 			#else
 			FunkinLua.luaTrace("createShaderTag: Platform unsupported for Runtime Shaders!", false, false, FlxColor.RED);
@@ -101,20 +104,16 @@ class ShaderFunctions
 		Lua_helper.add_callback(lua, "addCamShader", function(tag:String, cam:String) {
 			var camera:FlxCamera = LuaUtils.getCamera(cam);
 
-			camera.visible = false;
-			trace(camera);
+			if (MusicBeatState.getVariables().get(tag) == null) return;
 
-			if (MusicBeatState.getVariables().get(tag) == null || !Std.isOfType(MusicBeatState.getVariables().get(tag), shaders.ErrorHandledShader.ErrorHandledRuntimeShader)) return;
-
-			camera._filters.push(MusicBeatState.getVariables().get(tag));
+			@:privateAccess camera._filters.push(MusicBeatState.getVariables().get(tag));
 		});
 
 		Lua_helper.add_callback(lua, "removeCamShader", function(tag:String, cam:String) {
 			var camera:FlxCamera = LuaUtils.getCamera(cam);
 
-			if (MusicBeatState.getVariables().get(tag) == null || !Std.isOfType(MusicBeatState.getVariables().get(tag), shaders.ErrorHandledShader.ErrorHandledRuntimeShader)) return;
-
-			camera._filters.remove(MusicBeatState.getVariables().get(tag));
+			if (MusicBeatState.getVariables().get(tag) == null) return;
+			@:privateAccess camera._filters.remove(MusicBeatState.getVariables().get(tag));
 		});
 
 
@@ -266,7 +265,8 @@ class ShaderFunctions
 		});
 		Lua_helper.add_callback(lua, "setShaderFloat", function(obj:String, prop:String, value:Float) {
 			#if (!flash && MODS_ALLOWED && sys)
-			var shader:FlxRuntimeShader = getShader(obj);
+			var shader:Dynamic = getShader(obj);
+
 			if(shader == null)
 			{
 				FunkinLua.luaTrace("setShaderFloat: Shader is not FlxRuntimeShader!", false, false, FlxColor.RED);
@@ -322,9 +322,9 @@ class ShaderFunctions
 	}
 	
 	#if (!flash && MODS_ALLOWED && sys)
-	public static function getShader(obj:String):FlxRuntimeShader
+	public static function getShader(obj:String):Dynamic
 	{
-		if (MusicBeatState.getVariables().get(obj) != null) return MusicBeatState.getVariables().get(obj);
+		if (MusicBeatState.getVariables().get('shaderItself_${obj}') != null) return cast MusicBeatState.getVariables().get('shaderItself_${obj}');
 
 		var split:Array<String> = obj.split('.');
 		var target:FlxSprite = null;
