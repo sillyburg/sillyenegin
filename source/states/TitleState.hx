@@ -358,6 +358,18 @@ class TitleState extends MusicBeatState
 
 		// EASTER EGG
 
+		if (transitioning && pressedEnter)
+			{
+				transitioning = false;
+				closedState = true;
+
+				FlxTransitionableState.skipNextTransIn = true;
+
+				MusicBeatState.switchState(new MainMenuState());
+
+				return;
+			}
+
 		if (initialized && !transitioning && skippedIntro)
 		{
 			if (newTitle && !pressedEnter)
@@ -392,6 +404,7 @@ class TitleState extends MusicBeatState
 				});
 				// FlxG.sound.play(Paths.music('titleShoot'), 0.7);
 			}
+
 			#if TITLE_SCREEN_EASTER_EGG
 			else if (FlxG.keys.firstJustPressed() != FlxKey.NONE)
 			{
