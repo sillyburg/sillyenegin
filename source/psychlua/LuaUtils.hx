@@ -7,6 +7,10 @@ import backend.StageData;
 import openfl.display.BlendMode;
 import Type.ValueType;
 
+#if (!flash && sys)
+import openfl.filters.ShaderFilter;
+#end
+
 import substates.GameOverSubstate;
 
 typedef LuaTweenOptions = {
@@ -54,6 +58,18 @@ class LuaUtils
 		}
 
 		return target;
+	}
+
+	public static function addCamShader(cam:FlxCamera, shader:ShaderFilter)
+	{
+		#if (!flash && sys)
+		@:privateAccess if (cam._filters != null)
+							cam._filters.push(shader);
+						else
+							cam.filters = [shader];
+		#else
+		FunkinLua.luaTrace("LuaUtils.addCamShader: Incompatible platform!", false, false, FlxColor.RED);
+		#end
 	}
 
 	public static function setVarInArray(instance:Dynamic, variable:String, value:Dynamic, allowMaps:Bool = false):Any

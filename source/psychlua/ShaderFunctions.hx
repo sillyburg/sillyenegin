@@ -65,18 +65,13 @@ class ShaderFunctions
 			if (MusicBeatState.getVariables().get(tag) != null)
 			{
 				for (i in FlxG.cameras.list)
-				{
-					var filters:Array<BitmapFilter> = i.filters;
-					
-					filters = filters.filter(function(f) {
-						return f != MusicBeatState.getVariables().get(tag);
-					});
-
-					i.setFilters(filters);
-				}
+					@:privateAccess if (i._filters != null) i._filters.remove(MusicBeatState.getVariables().get(tag));
 
 				MusicBeatState.getVariables().remove(tag);
 			}
+
+			if (MusicBeatState.getVariables().get('shaderItself_${tag}') != null)
+				MusicBeatState.getVariables().remove('shaderItself_${tag}');
 
 			var arr:Array<String> = funk.runtimeShaders.get(shader);
 			MusicBeatState.getVariables().set('shaderItself_${tag}', new shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, arr[0], arr[1]));
@@ -84,6 +79,34 @@ class ShaderFunctions
 			return true;
 			#else
 			FunkinLua.luaTrace("createShaderTag: Platform unsupported for Runtime Shaders!", false, false, FlxColor.RED);
+			#end
+			return false;
+		});
+		funk.addLocalCallback("removeShaderTag", function(tag:String, ?force:Bool = false) {
+			if(!ClientPrefs.data.shaders && !force) return false;
+
+			#if (!flash && sys)
+			if(MusicBeatState.getVariables().get(tag) == null)
+			{
+				FunkinLua.luaTrace('removeShaderTag: Tag $tag does not exist!', false, false, FlxColor.RED);
+				return false;
+			}
+
+			if (MusicBeatState.getVariables().get(tag) != null)
+			{
+				for (i in FlxG.cameras.list)
+					@:privateAccess if (i._filters != null) i._filters.remove(MusicBeatState.getVariables().get(tag));
+
+				MusicBeatState.getVariables().remove(tag);
+			}
+
+			if (MusicBeatState.getVariables().get('shaderItself_${tag}') != null)
+				MusicBeatState.getVariables().remove('shaderItself_${tag}');
+	
+
+			return true;
+			#else
+			FunkinLua.luaTrace("removeShaderTag: Platform unsupported for Runtime Shaders!", false, false, FlxColor.RED);
 			#end
 			return false;
 		});
@@ -106,14 +129,14 @@ class ShaderFunctions
 
 			if (MusicBeatState.getVariables().get(tag) == null) return;
 
-			@:privateAccess camera._filters.push(MusicBeatState.getVariables().get(tag));
+			LuaUtils.addCamShader(camera, MusicBeatState.getVariables().get(tag));
 		});
 
 		Lua_helper.add_callback(lua, "removeCamShader", function(tag:String, cam:String) {
 			var camera:FlxCamera = LuaUtils.getCamera(cam);
 
 			if (MusicBeatState.getVariables().get(tag) == null) return;
-			@:privateAccess camera._filters.remove(MusicBeatState.getVariables().get(tag));
+			@:privateAccess if (camera._filters != null) camera._filters.remove(MusicBeatState.getVariables().get(tag));
 		});
 
 

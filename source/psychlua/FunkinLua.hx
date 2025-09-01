@@ -1750,6 +1750,11 @@ class FunkinLua {
 				var originalTag:String = tag;
 				tag = LuaUtils.formatVariable('tween_$tag');
 				variables.set(tag, FlxTween.tween(target, tweenValue, duration, {type: LuaUtils.getTweenTypeByString(type), ease: LuaUtils.getTweenEaseByString(ease),
+					onUpdate: function(twn:FlxTween)
+					{
+						if (PlayState.instance != null)
+							PlayState.instance.callOnLuas("onTweenUpdated", [originalTag]);
+					},
 					onComplete: function(twn:FlxTween)
 					{
 						variables.remove(tag);
@@ -1779,6 +1784,11 @@ class FunkinLua {
 
 			var variables = MusicBeatState.getVariables();
 			variables.set(tag, FlxTween.tween(strumNote, data, duration, {type: LuaUtils.getTweenTypeByString(type), ease: LuaUtils.getTweenEaseByString(ease),
+				onUpdate: function(twn:FlxTween)
+				{
+					if (PlayState.instance != null)
+							PlayState.instance.callOnLuas("onTweenUpdated", [originalTag]);
+				},
 				onComplete: function(twn:FlxTween)
 				{
 					variables.remove(tag);
